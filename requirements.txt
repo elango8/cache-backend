@@ -6,3 +6,4 @@ redis
 cachetools
 pydantic
 python-dotenv
+requests>=2.31.0
