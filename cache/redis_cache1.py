@@ -4,21 +4,34 @@ import json
 import logging
 from typing import Any, Optional
 from datetime import datetime
-
+import logging
+import requests
+import os
 logger = logging.getLogger(__name__)
-
+from dotenv import load_dotenv
 # ---------- REDIS CLIENT ----------
+load_dotenv()
+UPSTASH_REDIS_REST_URL = os.getenv("UPSTASH_REDIS_REST_URL")
+UPSTASH_REDIS_REST_TOKEN = os.getenv("UPSTASH_REDIS_REST_TOKEN")
+
 try:
-    redis_client = redis.Redis(
-        host="localhost",
-        port=6379,
-        db=0,
-        decode_responses=True,
-    )
-    redis_client.ping()
+    if not UPSTASH_REDIS_REST_URL or not UPSTASH_REDIS_REST_TOKEN:
+        raise RuntimeError("Upstash env vars not set")
+
+    redis_client = requests.Session()
+    redis_client.headers.update({
+        "Authorization": f"Bearer {UPSTASH_REDIS_REST_TOKEN}",
+        "Content-Type": "application/json",
+    })
+
+    # health check
+    resp = redis_client.post(f"{UPSTASH_REDIS_REST_URL}/ping", timeout=2)
+    resp.raise_for_status()
+
 except Exception as e:
     logger.error("Redis unavailable, continuing without Redis", exc_info=e)
     redis_client = None
+
 
 
 # ---------- JSON SERIALIZER ----------
